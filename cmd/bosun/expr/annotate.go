@@ -99,7 +99,7 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 	for i, v := range columns {
 		// switch is so we fail before fetching annotations
 		switch v {
-		case "start", "end", "owner", "user", "host", "category", "url", "message":
+		case "start", "end", "owner", "user", "host", "category", "url", "message", "duration":
 			// Pass
 		default:
 			return nil, fmt.Errorf("%v is not a valid column, must be start, end, owner, user, host, category, url, or message", v)
@@ -131,6 +131,8 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 				row[columnIndex["url"]] = a.Url
 			case "message":
 				row[columnIndex["message"]] = a.Message
+			case "duration":
+				row[columnIndex["duration"]] = a.EndDate.Sub(a.StartDate.Time).String()
 			}
 		}
 		t.Rows = append(t.Rows, row)
