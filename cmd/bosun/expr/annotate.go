@@ -23,8 +23,7 @@ var Annotate = map[string]parse.Func{
 	},
 	"antable": {
 		Args:   []models.FuncType{models.TypeString, models.TypeString, models.TypeString, models.TypeString},
-		Return: models.TypeSeriesSet,
-		Tags:   tagFirst,
+		Return: models.TypeTable,
 		F:      AnTable,
 	},
 }
