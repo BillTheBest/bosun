@@ -300,6 +300,28 @@ comprising of the average of given metric from 1d to 1d-1h-ago, 2d to
 instead of concatenating series together, each series is reduced to a number,
 and those numbers created into a series.
 
+# Annotation Query Functions
+These function are available when annotate is enabled via Bosun's configuration.
+
+## Annotation Filters
+For the following annotation functions, `filter` is a string with the following specification.
+
+Items in a filter are in the format `keyword:value`. The value is either a glob pattern or literal string to match, or the reserved word `empty` which means that the value of the field is an empty string.
+
+Possible keywords are: `owner`, `user`, `host`, `category`, `url`, and `message`. 
+
+All items can be combined in boolean logic by using paranthesis groupging, `!` as not, `AND` as logical and, and `OR` as logical or.
+
+For example, `"owner:sre AND ! user:empty"` would show things that belong to sre, and have a username specified. When annotations are created by a process, we don't specify a user.
+
+## antable(filter string, fieldsCSV string, startDuration, endDuration) Table
+Antable is meant for shoowing annotations in a Grafana table, where Grafana's "To Table Transform" under options is set to type "Table".
+
+See Annotation Filters above to understand filters. FieldsCSV is a list of columns to display in the table. They can be in any order. The possible columns you can include are: `start`, `end`, `owner`, `user`, `host`, `category`, `url`, `message`, `duration`. At least one column must be specified.
+
+For example: `antable("owner:sre AND category:outage", "start,end,user,owner,category,message", "8w", "")` will return a table of annotations with the selected columns in FieldCSV going back 8 weeks from the time of the query.
+
+
 # Reduction Functions
 
 All reduction functions take a seriesSet and return a numberSet with one element per unique group.
