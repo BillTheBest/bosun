@@ -15,11 +15,11 @@ import (
 
 var Annotate = map[string]parse.Func{
 	// Funcs for querying elastic
-	"ancount": {
+	"ancounts": {
 		Args:   []models.FuncType{models.TypeString, models.TypeString, models.TypeString},
 		Return: models.TypeSeriesSet,
 		Tags:   tagFirst,
-		F:      AnCount,
+		F:      AnCounts,
 	},
 	"antable": {
 		Args:   []models.FuncType{models.TypeString, models.TypeString, models.TypeString, models.TypeString},
@@ -67,7 +67,7 @@ func getAndFilterAnnotations(e *State, start, end *time.Time, filter string) (an
 	return filteredAnnotations, nil
 }
 
-func AnCount(e *State, T miniprofiler.Timer, filter, startDuration, endDuration string) (r *Results, err error) {
+func AnCounts(e *State, T miniprofiler.Timer, filter, startDuration, endDuration string) (r *Results, err error) {
 	start, end, err := procDuration(e, startDuration, endDuration)
 	if err != nil {
 		return nil, err
@@ -76,16 +76,40 @@ func AnCount(e *State, T miniprofiler.Timer, filter, startDuration, endDuration 
 	if err != nil {
 		return nil, err
 	}
-	// TODO Fractional outage if outage crosses request time border
+	series := make(Series)
+	for i, a := range filteredAnnotations {
+		inBounds := (a.StartDate.Time.After(*start) || a.StartDate.Time == *start) && (a.EndDate.Time.Before(*end) || a.EndDate.Time == *end)
+		entirelyOutOfBounds := a.StartDate.Before(*start) && a.EndDate.Time.After(*end)
+		if inBounds || entirelyOutOfBounds {
+			series[time.Unix(int64(i), 0).UTC()] = 1
+			continue
+		}
+		aDuration := a.EndDate.Time.Sub(a.StartDate.Time)
+		if aDuration == 0 {
+			series[time.Unix(int64(i), 0).UTC()] = 1
+			continue
+		}
+		if a.StartDate.Time.Before(*start) {
+			durationBeforeStart := start.Sub(a.StartDate.Time)
+			percentBeforeStart := float64(durationBeforeStart) / float64(aDuration)
+			series[time.Unix(int64(i), 0).UTC()] = percentBeforeStart
+			continue
+		}
+		if a.EndDate.Time.After(*end) {
+			durationAfterEnd := a.EndDate.Time.Sub(*end)
+			percentAfterEnd := float64(durationAfterEnd) / float64(aDuration)
+			series[time.Unix(int64(i), 0).UTC()] = percentAfterEnd
+		}
+	}
 	return &Results{
 		Results: []*Result{
-			{Value: Scalar(float64(len(filteredAnnotations)))},
+			{Value: series},
 		},
 	}, nil
 }
 
 // AnTable returns a table response (meant for Grafana) of matching annotations based on the requested fields
-func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, endDuration string,) (r *Results, err error) {
+func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, endDuration string) (r *Results, err error) {
 	start, end, err := procDuration(e, startDuration, endDuration)
 	if err != nil {
 		return nil, err

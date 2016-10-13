@@ -321,6 +321,39 @@ See Annotation Filters above to understand filters. FieldsCSV is a list of colum
 
 For example: `antable("owner:sre AND category:outage", "start,end,user,owner,category,message", "8w", "")` will return a table of annotations with the selected columns in FieldCSV going back 8 weeks from the time of the query.
 
+# ancounts(filter string, startDuration string, endDuration string) seriesSet
+ancounts returns a series representing the number of annotations that matched the filter for the specified period. One might expect a number instead of a series, but by having a series it has a useful property. We can count outages that span'd across the requested time frame and count them as fractional outages.
+
+If an annotation's timespan is contained entirely within the request timespan, or the timespan of the request is within the the timespan of the annotation, a 1 is added to the series.
+
+If an annotation either starts before the requested start time, or ends after the requested start time then it is counted as a fractional outage (Assuming the annotation ended or started respectively with the requested time frame).
+
+For example:
+
+The following request is made at `2016-09-21 14:49:00`.
+
+```
+$filter = "owner:sre AND category:outage"
+$back = "1n"
+$count = ancounts($filter, $back, "")
+$table = antable($filter,  "start,end,user,owner,category,message", $back, "")
+# TimeFrame of the Fractional Outage: "2016-09-21T14:47:56Z", "2016-09-21T14:50:53Z" (Duration: 2m56 sec)
+$count
+```
+
+Returns:
+```
+	
+{
+  "0": 1,
+  "1": 1,
+  "2": 0.6384180790960452
+}
+```
+
+The float values means that 63% of the annotation fell with the requested time frame. Once can get the sum of these by doing `sum($count)`, result of `2.63...` to get the fractional sum, or `len($count)`, result `3` to get the count.
+
+Note: The index values above, 0, 1, and 2 are disregarded and are just there so we can use the same underlying type as a time series.
 
 # Reduction Functions
 
