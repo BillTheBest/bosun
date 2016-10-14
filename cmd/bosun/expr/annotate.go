@@ -85,6 +85,7 @@ func AnCounts(e *State, T miniprofiler.Timer, filter, startDuration, endDuration
 		inBounds := (aStart.After(*reqStart) || aStart == *reqStart) && (aEnd.Before(*reqEnd) || aEnd == *reqEnd)
 		entirelyOutOfBounds := aStart.Before(*reqStart) && aEnd.After(*reqEnd)
 		if inBounds || entirelyOutOfBounds {
+			// time has no meaning here, so we just make the key an index since we don't have an array type
 			series[time.Unix(int64(i), 0).UTC()] = 1
 			continue
 		}
@@ -160,7 +161,9 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 			case "message":
 				row[columnIndex["message"]] = a.Message
 			case "duration":
-				row[columnIndex["duration"]] = a.EndDate.Sub(a.StartDate.Time).String()
+				d := a.EndDate.Sub(a.StartDate.Time)
+				// Format Time in a way that can be lexically sorted
+				row[columnIndex["duration"]] = hhmmss(d)
 			}
 		}
 		t.Rows = append(t.Rows, row)
@@ -170,4 +173,13 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 			{Value: t},
 		},
 	}, nil
+}
+
+// hhmmss formats a duration into HHH:MM:SS (Hours, Minutes, Seconds) so it can be lexically sorted
+// up to 999 hours
+func hhmmss(d time.Duration) string {
+	hours := int64(d.Hours())
+	minutes := int64((d - time.Duration(time.Duration(hours) * time.Hour)).Minutes())
+	seconds := int64((d - time.Duration(time.Duration(minutes) * time.Minute)).Seconds())
+	return fmt.Sprintf("%03d:%02d:%02d", hours, minutes, seconds)
 }
