@@ -336,7 +336,6 @@ The following request is made at `2016-09-21 14:49:00`.
 $filter = "owner:sre AND category:outage"
 $back = "1n"
 $count = ancounts($filter, $back, "")
-$table = antable($filter,  "start,end,user,owner,category,message", $back, "")
 # TimeFrame of the Fractional annotation: "2016-09-21T14:47:56Z", "2016-09-21T14:50:53Z" (Duration: 2m56 sec)
 $count
 ```
@@ -353,6 +352,32 @@ Returns:
 The float values means that 36% of the annotation fell with the requested time frame. Once can get the sum of these by doing `sum($count)`, result of `2.36...` to get the fractional sum, or `len($count)`, result `3` to get the count.
 
 Note: The index values above, 0, 1, and 2 are disregarded and are just there so we can use the same underlying type as a time series.
+
+
+# andurations(filter string, startDuration, endDuration string) seriesSet
+andurations behaves in a similiar way to ancounts. The difference is that the values you returned will be the duration of annotation in seconds. 
+
+If the duration spans part of the requested time frame, only the duration of the annotation that falls within the timerange will be returns as a value for that annotation. If the annotation starts before the request and ends after the request, the duration of the request timeframe will be returned.
+
+For example, a identical query to the example in ancounts but using andurations instead:
+
+```
+$filter = "owner:sre AND category:outage"
+$back = "1n"
+$durations = andurations($filter, $back, "")
+# TimeFrame of the Fractional Outage: "2016-09-21T14:47:56Z", "2016-09-21T14:50:53Z",
+$durations
+```
+
+Returns:
+```
+	
+{
+  "0": 402,
+  "1": 758,
+  "2": 64
+}
+```
 
 # Reduction Functions
 

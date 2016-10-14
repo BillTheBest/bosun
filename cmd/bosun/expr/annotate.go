@@ -21,6 +21,12 @@ var Annotate = map[string]parse.Func{
 		Tags:   tagFirst,
 		F:      AnCounts,
 	},
+	"andurations": {
+		Args:   []models.FuncType{models.TypeString, models.TypeString, models.TypeString},
+		Return: models.TypeSeriesSet,
+		Tags:   tagFirst,
+		F:      AnDurations,
+	},
 	"antable": {
 		Args:   []models.FuncType{models.TypeString, models.TypeString, models.TypeString, models.TypeString},
 		Return: models.TypeTable,
@@ -67,7 +73,51 @@ func getAndFilterAnnotations(e *State, start, end *time.Time, filter string) (an
 	return filteredAnnotations, nil
 }
 
-
+func AnDurations(e *State, T miniprofiler.Timer, filter, startDuration, endDuration string) (r *Results, err error) {
+	reqStart, reqEnd, err := procDuration(e, startDuration, endDuration)
+	if err != nil {
+		return nil, err
+	}
+	filteredAnnotations, err := getAndFilterAnnotations(e, reqStart, reqEnd, filter)
+	if err != nil {
+		return nil, err
+	}
+	series := make(Series)
+	for i, a := range filteredAnnotations {
+		aStart := a.StartDate.Time
+		aEnd := a.EndDate.Time
+		inBounds := (aStart.After(*reqStart) || aStart == *reqStart) && (aEnd.Before(*reqEnd) || aEnd == *reqEnd)
+		entirelyOutOfBounds := aStart.Before(*reqStart) && aEnd.After(*reqEnd)
+		aDuration := aEnd.Sub(aStart)
+		if inBounds {
+			// time has no meaning here, so we just make the key an index since we don't have an array type
+			series[time.Unix(int64(i), 0).UTC()] = aDuration.Seconds()
+		}
+		if entirelyOutOfBounds {
+			// Duration is equal to that of the full request
+			series[time.Unix(int64(i), 0).UTC()] = reqEnd.Sub(*reqStart).Seconds()
+		}
+		if aDuration == 0 {
+			// This would mean an out of bounds. Should never be here, but if we don't return an error in the case that we do end up here then we might panic on divide by zero later in the code
+			return nil, fmt.Errorf("unexpected annotation with 0 duration outside of request bounds (please file an issue)")
+		}
+		if aStart.Before(*reqStart) {
+			aDurationAfterReqStart := aEnd.Sub(*reqStart)
+			series[time.Unix(int64(i), 0).UTC()] = aDurationAfterReqStart.Seconds()
+			continue
+		}
+		if aEnd.After(*reqEnd) {
+			aDurationBeforeReqEnd := reqEnd.Sub(aStart)
+			series[time.Unix(int64(i), 0).UTC()] = aDurationBeforeReqEnd.Seconds()
+		}
+	}
+	return &Results{
+		Results: []*Result{
+			{Value: series},
+		},
+	}, nil
+	return nil, nil
+}
 
 func AnCounts(e *State, T miniprofiler.Timer, filter, startDuration, endDuration string) (r *Results, err error) {
 	reqStart, reqEnd, err := procDuration(e, startDuration, endDuration)
@@ -179,7 +229,7 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 // up to 999 hours
 func hhmmss(d time.Duration) string {
 	hours := int64(d.Hours())
-	minutes := int64((d - time.Duration(time.Duration(hours) * time.Hour)).Minutes())
-	seconds := int64((d - time.Duration(time.Duration(minutes) * time.Minute)).Seconds())
+	minutes := int64((d - time.Duration(time.Duration(hours)*time.Hour)).Minutes())
+	seconds := int64((d - time.Duration(time.Duration(minutes)*time.Minute)).Seconds())
 	return fmt.Sprintf("%03d:%02d:%02d", hours, minutes, seconds)
 }
