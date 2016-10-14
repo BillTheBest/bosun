@@ -337,21 +337,20 @@ $filter = "owner:sre AND category:outage"
 $back = "1n"
 $count = ancounts($filter, $back, "")
 $table = antable($filter,  "start,end,user,owner,category,message", $back, "")
-# TimeFrame of the Fractional Outage: "2016-09-21T14:47:56Z", "2016-09-21T14:50:53Z" (Duration: 2m56 sec)
+# TimeFrame of the Fractional annotation: "2016-09-21T14:47:56Z", "2016-09-21T14:50:53Z" (Duration: 2m56 sec)
 $count
 ```
 
 Returns:
 ```
-	
 {
   "0": 1,
   "1": 1,
-  "2": 0.6384180790960452
+  "2": 0.3615819209039548
 }
 ```
 
-The float values means that 63% of the annotation fell with the requested time frame. Once can get the sum of these by doing `sum($count)`, result of `2.63...` to get the fractional sum, or `len($count)`, result `3` to get the count.
+The float values means that 36% of the annotation fell with the requested time frame. Once can get the sum of these by doing `sum($count)`, result of `2.36...` to get the fractional sum, or `len($count)`, result `3` to get the count.
 
 Note: The index values above, 0, 1, and 2 are disregarded and are just there so we can use the same underlying type as a time series.
 
