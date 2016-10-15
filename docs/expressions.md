@@ -328,6 +328,8 @@ If an annotation's timespan is contained entirely within the request timespan, o
 
 If an annotation either starts before the requested start time, or ends after the requested start time then it is counted as a fractional outage (Assuming the annotation ended or started respectively with the requested time frame).
 
+If there are no annotations within the requested time period, then the value `NaN` will be returned.
+
 For example:
 
 The following request is made at `2016-09-21 14:49:00`.
@@ -358,6 +360,8 @@ Note: The index values above, 0, 1, and 2 are disregarded and are just there so 
 andurations behaves in a similiar way to ancounts. The difference is that the values you returned will be the duration of annotation in seconds. 
 
 If the duration spans part of the requested time frame, only the duration of the annotation that falls within the timerange will be returns as a value for that annotation. If the annotation starts before the request and ends after the request, the duration of the request timeframe will be returned.
+
+If there are no annotations within the requested time period, then the value `NaN` will be returned.
 
 For example, a identical query to the example in ancounts but using andurations instead:
 

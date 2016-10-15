@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"math"
+
 	"bosun.org/cmd/bosun/expr/parse"
 	"bosun.org/models"
 	"bosun.org/opentsdb"
@@ -113,12 +115,14 @@ func AnDurations(e *State, T miniprofiler.Timer, filter, startDuration, endDurat
 			series[time.Unix(int64(i), 0).UTC()] = aDurationBeforeReqEnd.Seconds()
 		}
 	}
+	if len(series) == 0 {
+		series[time.Unix(0, 0).UTC()] = math.NaN()
+	}
 	return &Results{
 		Results: []*Result{
 			{Value: series},
 		},
 	}, nil
-	return nil, nil
 }
 
 func AnCounts(e *State, T miniprofiler.Timer, filter, startDuration, endDuration string) (r *Results, err error) {
@@ -157,6 +161,9 @@ func AnCounts(e *State, T miniprofiler.Timer, filter, startDuration, endDuration
 			percentAfterEnd := float64(aDurationBeforeReqEnd) / float64(aDuration)
 			series[time.Unix(int64(i), 0).UTC()] = percentAfterEnd
 		}
+	}
+	if len(series) == 0 {
+		series[time.Unix(0, 0).UTC()] = math.NaN()
 	}
 	return &Results{
 		Results: []*Result{
