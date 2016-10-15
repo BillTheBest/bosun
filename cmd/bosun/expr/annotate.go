@@ -2,6 +2,7 @@ package expr
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -70,6 +71,7 @@ func getAndFilterAnnotations(e *State, start, end *time.Time, filter string) (an
 			filteredAnnotations = append(filteredAnnotations, a)
 		}
 	}
+	sort.Sort(sort.Reverse(annotate.AnnotationsByStartID(filteredAnnotations)))
 	return filteredAnnotations, nil
 }
 
