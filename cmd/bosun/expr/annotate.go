@@ -187,10 +187,10 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 	for i, v := range columns {
 		// switch is so we fail before fetching annotations
 		switch v {
-		case "start", "end", "owner", "user", "host", "category", "url", "message", "duration":
+		case "start", "end", "owner", "user", "host", "category", "url", "message", "duration", "link":
 			// Pass
 		default:
-			return nil, fmt.Errorf("%v is not a valid column, must be start, end, owner, user, host, category, url, or message", v)
+			return nil, fmt.Errorf("%v is not a valid column, must be start, end, owner, user, host, category, url, link, or message", v)
 		}
 		columnIndex[v] = i
 	}
@@ -219,6 +219,16 @@ func AnTable(e *State, T miniprofiler.Timer, filter, fieldsCSV, startDuration, e
 				row[columnIndex["url"]] = a.Url
 			case "message":
 				row[columnIndex["message"]] = a.Message
+			case "link":
+				if a.Url == "" {
+					row[columnIndex["link"]] = ""
+					continue
+				}
+				short := a.Url
+				if len(short) > 40 {
+					short = short[:40]
+				}
+				row[columnIndex["link"]] = fmt.Sprintf(`<a href="%v" target="_blank">%v</a>`, a.Url, short)
 			case "duration":
 				d := a.EndDate.Sub(a.StartDate.Time)
 				// Format Time in a way that can be lexically sorted

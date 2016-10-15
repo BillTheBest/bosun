@@ -317,7 +317,9 @@ For example, `"owner:sre AND ! user:empty"` would show things that belong to sre
 ## antable(filter string, fieldsCSV string, startDuration, endDuration) Table
 Antable is meant for shoowing annotations in a Grafana table, where Grafana's "To Table Transform" under options is set to type "Table".
 
-See Annotation Filters above to understand filters. FieldsCSV is a list of columns to display in the table. They can be in any order. The possible columns you can include are: `start`, `end`, `owner`, `user`, `host`, `category`, `url`, `message`, `duration`. At least one column must be specified.
+See Annotation Filters above to understand filters. FieldsCSV is a list of columns to display in the table. They can be in any order. The possible columns you can include are: `start`, `end`, `owner`, `user`, `host`, `category`, `url`, `link` `message`, `duration`. At least one column must be specified.
+
+`link` is unlike the others in that it actually returns the HTML to construct a link, whereas `url` is the the text of the link. This is so when using a Grafana table and Grafana v3.1.1 or later, you can have a link in a table as long as you enable sanitize HTML within the Grafana Column Styles.
 
 For example: `antable("owner:sre AND category:outage", "start,end,user,owner,category,message", "8w", "")` will return a table of annotations with the selected columns in FieldCSV going back 8 weeks from the time of the query.
 
